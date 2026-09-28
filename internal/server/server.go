@@ -13,7 +13,12 @@ import (
 	"github.com/PeaceXXX/composite-attestation-combiner/internal/evidence"
 	"github.com/PeaceXXX/composite-attestation-combiner/internal/keyrelease"
 	"github.com/PeaceXXX/composite-attestation-combiner/internal/policy"
+	"github.com/PeaceXXX/composite-attestation-combiner/internal/verifier"
 )
+
+// maxAttestBodyBytes caps the /v1/attest request body so a single oversized
+// payload cannot exhaust server memory.
+const maxAttestBodyBytes = 1 << 20 // 1 MiB
 
 // Service wires the combiner and the KMS together.
 type Service struct {
@@ -23,20 +28,12 @@ type Service struct {
 
 // AttestResponse is returned for POST /v1/attest.
 type AttestResponse struct {
-	Pass    bool                         `json:"pass"`
-	Score   float64                      `json:"score"`
-	KeyB64  string                       `json:"key_b64,omitempty"`
-	Binding string                       `json:"binding,omitempty"`
-	Reasons []string                     `json:"reasons,omitempty"`
-	Sources []verifierSourceVerdictAlias `json:"sources"`
-}
-
-// verifierSourceVerdictAlias keeps the JSON shape without importing policy's
-// inner type in the signature; it mirrors verifier.SourceVerdict.
-type verifierSourceVerdictAlias = struct {
-	Source  string   `json:"source"`
-	Pass    bool     `json:"pass"`
-	Reasons []string `json:"reasons,omitempty"`
+	Pass    bool                     `json:"pass"`
+	Score   float64                  `json:"score"`
+	KeyB64  string                   `json:"key_b64,omitempty"`
+	Binding string                   `json:"binding,omitempty"`
+	Reasons []string                 `json:"reasons,omitempty"`
+	Sources []verifier.SourceVerdict `json:"sources"`
 }
 
 // Handler builds the HTTP mux.
@@ -66,7 +63,7 @@ func (s *Service) handleAttest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req evidence.AttestationRequest
-	dec := json.NewDecoder(r.Body)
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxAttestBodyBytes))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request: " + err.Error()})
@@ -84,9 +81,7 @@ func (s *Service) handleAttest(w http.ResponseWriter, r *http.Request) {
 		Reasons: rel.Reasons,
 	}
 	for _, src := range verdict.Sources {
-		resp.Sources = append(resp.Sources, verifierSourceVerdictAlias{
-			Source: src.Source, Pass: src.Pass, Reasons: src.Reasons,
-		})
+		resp.Sources = append(resp.Sources, src)
 	}
 	status := http.StatusOK
 	if !rel.Granted {

@@ -38,12 +38,12 @@ func baseRequest(now time.Time) *evidence.AttestationRequest {
 			QuoteVersion: 4, TeeType: "tdx", TCBVersion: "2.1.0",
 			TDAttributes: "0x11", MRTD: "aa",
 			RTMR0: "bb", RTMR1: "cc", RTMR2: "dd", RTMR3: "ee",
-			SessionNonce: "n1",
+			SessionNonce: "57715a5b540e982a377b70434521b9af",
 		},
 		GPU: &evidence.GPUEvidence{
 			DeviceModel: "H100", DeviceID: "d1", DriverVersion: "550.127.05",
 			VBIOSVersion: "1.0", Firmware: map[string]string{"vbios": "ff"},
-			SessionNonce: "n1",
+			SessionNonce: "57715a5b540e982a377b70434521b9af",
 		},
 	}
 }
@@ -73,7 +73,7 @@ func TestCombineStale(t *testing.T) {
 func TestCombineNonceMismatch(t *testing.T) {
 	now := time.Now()
 	req := baseRequest(now)
-	req.GPU.SessionNonce = "different"
+	req.GPU.SessionNonce = "fbd7a576bb2332c2846aad8723bfd545"
 	if v := testCombiner(now).Combine(req); v.Pass {
 		t.Fatal("expected nonce splice to fail")
 	}
