@@ -10,10 +10,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/PeaceXXX/composite-attestation-combiner/internal/keyrelease"
@@ -61,9 +64,31 @@ func main() {
 		KMS: kms,
 	}
 	addr := getenv("LISTEN_ADDR", ":8080")
-	fmt.Printf("composite-attestation-combiner listening on %s (freshness=%s)\n", addr, freshness)
-	if err := http.ListenAndServe(addr, svc.Handler()); err != nil {
-		fmt.Fprintln(os.Stderr, "serve:", err)
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           svc.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	go func() {
+		fmt.Printf("composite-attestation-combiner listening on %s (freshness=%s)\n", addr, freshness)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintln(os.Stderr, "serve:", err)
+			os.Exit(1)
+		}
+	}()
+
+	<-ctx.Done()
+	fmt.Fprintln(os.Stderr, "shutting down...")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		fmt.Fprintln(os.Stderr, "shutdown:", err)
 		os.Exit(1)
 	}
 }

@@ -68,7 +68,7 @@ func postAttest(t *testing.T, svc *Service, usesGPU bool) *httptest.ResponseReco
 			"quote_version": 4, "tee_type": "tdx", "tcb_version": "2.1.0",
 			"td_attributes": "0x11", "mrtd": "aa",
 			"rtmr0": "bb", "rtmr1": "cc", "rtmr2": "dd", "rtmr3": "ee",
-			"session_nonce": "n1",
+			"session_nonce": "57715a5b540e982a377b70434521b9af",
 		},
 	})
 	req := httptest.NewRequest(http.MethodPost, "/v1/attest", bytes.NewReader(body))
@@ -103,12 +103,12 @@ func TestAttestDeniesWhenGPUFails(t *testing.T) {
 			"quote_version": 4, "tee_type": "tdx", "tcb_version": "2.1.0",
 			"td_attributes": "0x11", "mrtd": "aa",
 			"rtmr0": "bb", "rtmr1": "cc", "rtmr2": "dd", "rtmr3": "ee",
-			"session_nonce": "n1",
+			"session_nonce": "57715a5b540e982a377b70434521b9af",
 		},
 		"gpu": map[string]interface{}{
 			"device_model": "H100", "device_id": "d1", "driver_version": "550.127.05",
 			"vbios_version": "1.0", "firmware": map[string]string{"vbios": "ff"},
-			"session_nonce": "n1",
+			"session_nonce": "57715a5b540e982a377b70434521b9af",
 		},
 	})
 	req := httptest.NewRequest(http.MethodPost, "/v1/attest", bytes.NewReader(body))

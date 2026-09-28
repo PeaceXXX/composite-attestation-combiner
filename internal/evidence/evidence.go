@@ -8,12 +8,18 @@
 package evidence
 
 import (
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 )
+
+// MinSessionNonceLen is the minimum accepted session_nonce length in
+// characters. A nonce shorter than this carries too little entropy to bind
+// CPU and GPU evidence to the same session, so it is rejected structurally.
+const MinSessionNonceLen = 16
 
 // CPUQuote is a simplified, JSON-carried representation of a TDX quote's
 // report body: TCB version, TD attributes and the MRTD/RTMR measurement
@@ -91,8 +97,10 @@ func (q *CPUQuote) Validate() []string {
 	if strings.TrimSpace(q.TCBVersion) == "" {
 		problems = append(problems, "tcb_version is required")
 	}
-	if strings.TrimSpace(q.SessionNonce) == "" {
+	if n := strings.TrimSpace(q.SessionNonce); n == "" {
 		problems = append(problems, "session_nonce is required")
+	} else if len(n) < MinSessionNonceLen {
+		problems = append(problems, fmt.Sprintf("session_nonce must be at least %d characters", MinSessionNonceLen))
 	}
 	hexFields := map[string]string{
 		"mrtd": q.MRTD, "rtmr0": q.RTMR0, "rtmr1": q.RTMR1,
@@ -122,8 +130,10 @@ func (g *GPUEvidence) Validate() []string {
 	if strings.TrimSpace(g.DriverVersion) == "" {
 		problems = append(problems, "driver_version is required")
 	}
-	if strings.TrimSpace(g.SessionNonce) == "" {
+	if n := strings.TrimSpace(g.SessionNonce); n == "" {
 		problems = append(problems, "session_nonce is required")
+	} else if len(n) < MinSessionNonceLen {
+		problems = append(problems, fmt.Sprintf("session_nonce must be at least %d characters", MinSessionNonceLen))
 	}
 	if len(g.Firmware) == 0 {
 		problems = append(problems, "firmware must contain at least one component measurement")
@@ -146,22 +156,15 @@ func normalizeHex(s string) string {
 }
 
 // EqualHex reports whether two hex strings decode to the same bytes,
-// tolerating 0x prefixes and case differences.
+// tolerating 0x prefixes and case differences. The comparison runs in
+// constant time so measurement checks do not leak a timing oracle.
 func EqualHex(a, b string) bool {
 	ba, errA := hex.DecodeString(normalizeHex(a))
 	bb, errB := hex.DecodeString(normalizeHex(b))
 	if errA != nil || errB != nil {
 		return false
 	}
-	if len(ba) != len(bb) {
-		return false
-	}
-	for i := range ba {
-		if ba[i] != bb[i] {
-			return false
-		}
-	}
-	return true
+	return subtle.ConstantTimeCompare(ba, bb) == 1
 }
 
 // LoadRequest reads an AttestationRequest from a JSON file.
