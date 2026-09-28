@@ -1,0 +1,29 @@
+{
+  "workload_id": "inference-worker-01",
+  "uses_gpu": true,
+  "issued_at": 0,
+  "cpu": {
+    "quote_version": 4,
+    "tee_type": "tdx",
+    "tcb_version": "2.1.0",
+    "td_attributes": "0x00000011",
+    "mrtd": "8163eb6a1e08c316807f9a5657375b8d00b1770fdd02ba5422bb3260843e15a3535a25bb886706d80c076c3fdb29904f",
+    "rtmr0": "dccd3c0c5e928c9713b900e4ebb6580f2ef7daa3e424c6c3fa4529cdf847df3cda447a52c345893d1219da031ff38a75",
+    "rtmr1": "05dafd3c92c13731b898014278d5096f3788e9bc36a9e7d4e8cdc0fffebf970e2d8a152d90e8dab7ad9406ba19135f49",
+    "rtmr2": "9bf055fbff1362a74477b60bf8325dc32a3fc4392d10550f7d1a89793bd37feb05d3ab42d4db6007cf76fe6c631602c6",
+    "rtmr3": "cbd6e186a1a7afbe44f061a4603a9590c0afb4d9ea524e69c4cef2e0bd58ed4601c9cfea40b98ab4d776817d6c2f7ae1",
+    "session_nonce": "57715a5b540e982a377b70434521b9af"
+  },
+  "gpu": {
+    "device_model": "H100",
+    "device_id": "GPU-7f3a2b1c-demo",
+    "driver_version": "550.127.05",
+    "vbios_version": "96.00.52.00.03",
+    "firmware": {
+      "vbios": "6c3d425613e73ec203ba6468498983efa3443b54fbdc43a88ab7a0f9f73dbfed",
+      "fmc": "481410eba04283999dce800ac66206c94cac971f8555ca71a965be84d113ce6e",
+      "gsp": "8d72488baa7b739ef28b7af7767bd8145f1e904f41baa1aa4e738bf34f011198"
+    },
+    "session_nonce": "fbd7a576bb2332c2846aad8723bfd545"
+  }
+}
